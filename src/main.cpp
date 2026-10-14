@@ -84,10 +84,10 @@ constexpr uint32_t kClockFrameMs = 66;              // ~15 fps for the sweeping 
 constexpr uint8_t kBacklightFull = 255;
 constexpr uint8_t kBacklightDimmed = 77;  // ~30 %
 constexpr lv_coord_t kClockRadius = 119;  // full screen height
-constexpr uint32_t kClockFace = 0x1B1F27;
-constexpr uint32_t kClockRim = 0x3A4150;
-constexpr uint32_t kClockInk = 0xEEF0F3;
-constexpr uint32_t kClockSecond = 0xFEE715;
+constexpr uint32_t kClockFace = 0xF5F5F5;
+constexpr uint32_t kClockRim = 0x9AA0A6;
+constexpr uint32_t kClockInk = 0x111111;
+constexpr uint32_t kClockSecond = 0xEB0000;
 
 constexpr lv_coord_t kHeaderHeight = 26;
 constexpr lv_coord_t kTabBarHeight = 30;
@@ -2069,18 +2069,6 @@ void drawRadialBar(lv_draw_ctx_t *drawCtx, const lv_area_t &face, float angle, f
   lv_draw_polygon(drawCtx, &dsc, points, 4);
 }
 
-void drawRing(lv_draw_ctx_t *drawCtx, lv_point_t center, lv_coord_t radius, lv_coord_t width, uint32_t color) {
-  lv_draw_rect_dsc_t dsc;
-  lv_draw_rect_dsc_init(&dsc);
-  dsc.bg_opa = LV_OPA_TRANSP;
-  dsc.border_color = lv_color_hex(color);
-  dsc.border_width = width;
-  dsc.radius = LV_RADIUS_CIRCLE;
-  const lv_area_t area = {static_cast<lv_coord_t>(center.x - radius), static_cast<lv_coord_t>(center.y - radius),
-                          static_cast<lv_coord_t>(center.x + radius), static_cast<lv_coord_t>(center.y + radius)};
-  lv_draw_rect(drawCtx, &dsc, &area);
-}
-
 void drawDisc(lv_draw_ctx_t *drawCtx, lv_point_t center, lv_coord_t radius, uint32_t color) {
   lv_draw_rect_dsc_t dsc;
   lv_draw_rect_dsc_init(&dsc);
@@ -2091,7 +2079,7 @@ void drawDisc(lv_draw_ctx_t *drawCtx, lv_point_t center, lv_coord_t radius, uint
   lv_draw_rect(drawCtx, &dsc, &area);
 }
 
-// Dark face in the MeshWatch colours; proportions relative to the face radius.
+// Proportions follow the classic station clock, relative to the face radius.
 void drawClockFace(lv_event_t *event) {
   lv_draw_ctx_t *drawCtx = lv_event_get_draw_ctx(event);
   lv_area_t face;
@@ -2110,8 +2098,7 @@ void drawClockFace(lv_event_t *event) {
     if (mark % 5 == 0) {
       drawRadialBar(drawCtx, face, mark * 6.0f, r * 0.70f, r * 0.95f, r * 0.075f, r * 0.075f, kClockInk);
     } else {
-      drawDisc(drawCtx, clockPoint(face, r * 0.915f, mark * 6.0f), static_cast<lv_coord_t>(r * 0.022f) + 1,
-               kClockInk);
+      drawRadialBar(drawCtx, face, mark * 6.0f, r * 0.875f, r * 0.95f, r * 0.026f, r * 0.026f, kClockInk);
     }
   }
 
@@ -2131,10 +2118,9 @@ void drawClockFace(lv_event_t *event) {
 
   drawRadialBar(drawCtx, face, hourAngle, -r * 0.20f, r * 0.64f, r * 0.115f, r * 0.095f, kClockInk);
   drawRadialBar(drawCtx, face, minuteAngle, -r * 0.20f, r * 0.92f, r * 0.090f, r * 0.068f, kClockInk);
-  drawRadialBar(drawCtx, face, secondAngle, -r * 0.30f, r * 0.53f, r * 0.024f, r * 0.024f, kClockSecond);
-  drawRing(drawCtx, clockPoint(face, r * 0.62f, secondAngle), static_cast<lv_coord_t>(r * 0.09f),
-           static_cast<lv_coord_t>(r * 0.03f), kClockSecond);
-  drawDisc(drawCtx, clockPoint(face, 0, 0), static_cast<lv_coord_t>(r * 0.04f), kClockSecond);
+  drawRadialBar(drawCtx, face, secondAngle, -r * 0.30f, r * 0.60f, r * 0.024f, r * 0.024f, kClockSecond);
+  drawDisc(drawCtx, clockPoint(face, r * 0.62f, secondAngle), static_cast<lv_coord_t>(r * 0.10f), kClockSecond);
+  drawDisc(drawCtx, clockPoint(face, 0, 0), static_cast<lv_coord_t>(r * 0.03f), kClockSecond);
 }
 
 // Screen area covered by the second hand at `angle`, including tail and disc.
