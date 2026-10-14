@@ -247,7 +247,7 @@ bool saveWifiCredentials(const String &ssid, const String &password) {
 }
 
 bool loadWifiCredentials(String &ssid, String &password) {
-  preferences.begin("wifi_cfg", true);
+  preferences.begin("wifi_cfg", false);  // read-only would log an error while nothing is saved yet
   const bool hasSsid = preferences.isKey("ssid");
   const bool hasPassword = preferences.isKey("password");
   if (hasSsid && hasPassword) {
@@ -1376,7 +1376,7 @@ void processApiByte(uint8_t byte) {
 }
 
 bool loadRadioAddress() {
-  preferences.begin("radio", true);
+  preferences.begin("radio", false);  // read-only would log an error while nothing is saved yet
   const uint32_t stored = preferences.getUInt("ip", 0);
   preferences.end();
   if (stored == 0) {
