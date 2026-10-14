@@ -1,0 +1,96 @@
+# Builds the firmware on every push. A version tag (v1.2.3) additionally creates a
+# GitHub release with the binaries and publishes the web flasher to GitHub Pages.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the release on tags
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: platformio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio==6.2.0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build firmware
+        env:
+          PLATFORMIO_BUILD_FLAGS: -D MESHWATCH_VERSION='"${{ steps.version.outputs.version }}"'
+        run: pio run -e esp32-cyd
+
+      - name: Assemble web flasher
+        run: tools/build_site.sh "${{ steps.version.outputs.version }}"
+
+      - name: Upload Pages artifact
+        if: steps.version.outputs.release == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Create release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          build=.pio/build/esp32-cyd
+          cp "$build/firmware.factory.bin" "meshwatch-$VERSION-full.bin"
+          cp "$build/firmware.bin" "meshwatch-$VERSION-app.bin"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "MeshWatch $GITHUB_REF_NAME" \
+            --generate-notes \
+            --notes "Install from the web flasher: https://hb9iiu.github.io/ESP32-CYD-MeshWatch/
+
+          Manual flashing with esptool: write \`meshwatch-$VERSION-full.bin\` at 0x0 (complete image),
+          or \`meshwatch-$VERSION-app.bin\` at 0x10000 (update keeping settings)." \
+            "meshwatch-$VERSION-full.bin" "meshwatch-$VERSION-app.bin"
+
+  deploy-flasher:
+    needs: build
+    if: needs.build.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeshWatch Web Installer</title>
+  <meta name="description" content="Install MeshWatch, a Meshtastic message monitor for the ESP32 Cheap Yellow Display, straight from your browser.">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+  <style>
+    :root {
+      --bg: #0e1014;
+      --panel: #1b1f27;
+      --line: #2a3140;
+      --text: #eef0f3;
+      --muted: #8a93a6;
+      --accent: #fee715;
+      --good: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+    h1 { font-size: 34px; margin: 0 0 4px; letter-spacing: -0.5px; }
+    h1 span { color: var(--accent); }
+    h2 { font-size: 20px; margin: 36px 0 12px; }
+    .lead { color: var(--muted); margin: 0 0 24px; }
+    .hero {
+      display: block;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      image-rendering: auto;
+    }
+    .install {
+      margin: 24px 0 8px;
+      padding: 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .install button {
+      font: inherit;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 12px 22px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #1a1600;
+      cursor: pointer;
+    }
+    .install button:hover { filter: brightness(1.08); }
+    .install .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+    .warn { color: #fca5a5; }
+    #version { color: var(--muted); font-size: 14px; }
+    ol, ul { padding-left: 22px; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 14px;
+    }
+    a { color: var(--accent); }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Mesh<span>Watch</span></h1>
+    <p class="lead">A Meshtastic message monitor for the ESP32 Cheap Yellow Display (ESP32-2432S028).
+      <span id="version"></span></p>
+
+    <img class="hero" src="splash.png" width="640" height="480" alt="MeshWatch boot screen: a radar over a mesh of nodes">
+
+    <div class="install">
+      <esp-web-install-button manifest="manifest.json">
+        <button slot="activate">Install MeshWatch</button>
+        <span slot="unsupported" class="warn">Your browser can't flash devices. Use Chrome or Edge on a desktop
+          computer (Windows, macOS or Linux).</span>
+        <span slot="not-allowed" class="warn">Flashing only works from a secure (https) page.</span>
+      </esp-web-install-button>
+      <p class="note">Connect the CYD with a USB data cable, click Install and pick its serial port.
+        If no port shows up, install the CH340 USB driver for your system and try again.</p>
+    </div>
+
+    <h2>1. Prepare your Meshtastic radio</h2>
+    <p>MeshWatch talks to your radio over WiFi, so the radio needs WiFi turned on:</p>
+    <ol>
+      <li>In the Meshtastic app or web client open <strong>Device Config → Network</strong>.</li>
+      <li>Enable WiFi, enter your network name (SSID) and password, and save.</li>
+    </ol>
+    <ul>
+      <li>The radio must be ESP32-based (Heltec, T-Beam, LilyGO, Station G2…). nRF52 radios such as the RAK4631 or
+        T-Echo have no WiFi.</li>
+      <li>ESP32 radios turn Bluetooth off while WiFi is on.</li>
+    </ul>
+
+    <h2>2. Install and set up MeshWatch</h2>
+    <ol>
+      <li>Click <strong>Install MeshWatch</strong> above. For a first install, allow erasing the device.</li>
+      <li>The CYD restarts and shows a QR code. Scan it with your phone to join the
+        <code>MeshWatch-Setup</code> network.</li>
+      <li>The setup page opens (otherwise open <code>192.168.4.1</code>). Enter the same WiFi network as your
+        radio.</li>
+      <li>MeshWatch restarts, finds the radio on your network by itself and shows incoming messages.</li>
+    </ol>
+
+    <h2>What it shows</h2>
+    <ul>
+      <li><strong>Messages</strong> – text messages heard by your radio, with sender, channel and time. The last
+        24 hours survive a power cut.</li>
+      <li><strong>Nodes</strong> – everyone your radio knows, with last heard, hops or signal, and battery.</li>
+      <li><strong>Info</strong> – your radio's hardware, firmware, battery, channel use and LoRa settings.</li>
+      <li>After two idle minutes a railway-style clock appears and counts new messages.</li>
+    </ul>
+
+    <footer>
+      <p>Source code, documentation and releases:
+        <a href="https://github.com/HB9IIU/ESP32-CYD-MeshWatch">github.com/HB9IIU/ESP32-CYD-MeshWatch</a> · MIT license</p>
+      <p>Meshtastic® is a registered trademark of Meshtastic LLC. MeshWatch is an independent project and not
+        affiliated with Meshtastic LLC.</p>
+    </footer>
+  </main>
+  <script>
+    fetch("manifest.json")
+      .then((response) => response.json())
+      .then((manifest) => {
+        document.getElementById("version").textContent = "Version " + manifest.version + ".";
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>
